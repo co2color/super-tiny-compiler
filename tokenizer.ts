@@ -6,63 +6,63 @@ export enum TokenTypes {
 }
 
 export interface Token {
-  type: TokenTypes
-  value: string
+  type: TokenTypes;
+  value: string;
 }
 
 export function tokenizer(code: string) {
-  const tokens: Token[] = []
-  let current = 0
+  const tokens: Token[] = [];
+  let current = 0;
 
   while (current < code.length) {
-    let char = code[current]
+    let char = code[current];
 
-    const WHITESPACE = /\s/
+    const WHITESPACE = /\s/;
     if (WHITESPACE.test(char)) {
-      current++
-      continue
+      current++;
+      continue;
     }
 
-    if (char === '(') {
+    if (char === "(") {
       tokens.push({
         type: TokenTypes.Paren,
         value: char,
-      })
-      current++
-      continue
+      });
+      current++;
+      continue;
     }
 
-    if (char === ')') {
+    if (char === ")") {
       tokens.push({
         type: TokenTypes.Paren,
         value: char,
-      })
-      current++
-      continue
+      });
+      current++;
+      continue;
     }
 
-    const LETTERS = /[a-z]/i
+    const LETTERS = /[a-z]/i;
     if (LETTERS.test(char)) {
-      let value = ''
+      let value = "";
       while (LETTERS.test(char) && current < code.length) {
-        value += char
-        char = code[++current]
+        value += char;
+        char = code[++current];
       }
-      tokens.push({ type: TokenTypes.Name, value })
-      continue
+      tokens.push({ type: TokenTypes.Name, value });
+      continue;
     }
 
-    const NUMBERS = /[0-9]/
+    const NUMBERS = /[0-9]/;
     if (NUMBERS.test(char)) {
-      let value = ''
+      let value = "";
       while (NUMBERS.test(char) && current < code.length) {
-        value += char
-        char = code[++current]
+        value += char;
+        char = code[++current];
       }
-      tokens.push({ type: TokenTypes.Number, value })
-      continue
+      tokens.push({ type: TokenTypes.Number, value });
+      continue;
     }
   }
 
-  return tokens
+  return tokens;
 }
