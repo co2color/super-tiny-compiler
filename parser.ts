@@ -1,94 +1,67 @@
-import { Token, TokenTypes } from './tokenizer'
+import {
+  createRootNode,
+  createStringLiteralNode,
+  createNumberLiteralNode,
+  createCallExpression,
+} from "./ast";
+import { Token, TokenTypes } from "./tokenizer";
 
-export enum NodeTypes {
-  Root,
-  Number,
-  CallExpression,
-}
-
-interface Node {
-  type: NodeTypes
-}
-
-type ChildNode = NumberNode | CallExpressionNode
-
-interface RootNode extends Node {
-  body: ChildNode[]
-}
-
-interface NumberNode extends Node {
-  value: string
-}
-interface CallExpressionNode extends Node {
-  name: string
-  params: ChildNode[]
-}
-
-function createRootNode(): RootNode {
-  return {
-    type: NodeTypes.Root,
-    body: [],
-  }
-}
-
-function createNumberNode(value: string): NumberNode {
-  return {
-    type: NodeTypes.Number,
-    value,
-  }
-}
-function createCallExpressionNode(name: string): CallExpressionNode {
-  return {
-    type: NodeTypes.CallExpression,
-    name,
-    params: [],
-  }
-}
-
-// tokens => ast
 export function parser(tokens: Token[]) {
-  let current = 0
-  const rootNode = createRootNode()
+  const root = createRootNode();
+
+  let current = 0;
 
   function walk() {
-    let token = tokens[current]
+    let token = tokens[current];
 
     if (token.type === TokenTypes.Number) {
-      current++
-      return createNumberNode(token.value)
+      current++;
+
+      return createNumberLiteralNode(token.value);
     }
 
-    if (token.type === TokenTypes.Paren && token.value === '(') {
-      token = tokens[++current]
-      const node = createCallExpressionNode(token.value)// add
-      token = tokens[++current]
-      while (!(token.type === TokenTypes.Paren && token.value === ')')) {
-        //如果是数字、左括号等等，就会继续递归，
-        // 直到遇到右括号，那么就会返回一个CallExpressionNode，return这个node，把这个node挂载到root上
-        const walkNode = walk()
-        node.params.push(walkNode)
-        token = tokens[current]
+    if (token.type === TokenTypes.String) {
+      current++;
+
+      return createStringLiteralNode(token.value);
+    }
+
+    if (token.type === TokenTypes.Paren && token.value === "(") {
+      token = tokens[++current];
+
+      let node = createCallExpression(token.value);
+
+      // 上一个 token 已经使用完了  所以我们还需要在移动下位置
+      token = tokens[++current];
+      // params
+      while (
+        // token.type !== TokenType.paren ||
+        // (token.type === TokenType.paren && token.value !== ")")
+        !(token.type === TokenTypes.Paren && token.value === ")")
+      ) {
+        node.params.push(walk());
+        token = tokens[current];
       }
-      current++
-      return node
+
+      // 跳过 )
+      current++;
+
+      return node;
     }
 
-    throw new Error("I don't know what this token is: " + token)
+    throw new Error(`识别不了的 token: ${token}`);
   }
-
-  rootNode.body.push(walk())
 
   while (current < tokens.length) {
-    const outWalkNode = walk()
-    rootNode.body.push(outWalkNode)
+    root.body.push(walk());
   }
 
-  return rootNode
+  return root;
 }
+
 
 /*
   其实如果你的递归水平不错， 就不需要看下面的分析了，直接看上面代码就行了，下面的内容就是讲述这个递归思路的。
-
   对于这个测试用例tokens:
   const tokens = [
     { type: TokenTypes.Paren, value: '(' },
@@ -101,9 +74,7 @@ export function parser(tokens: Token[]) {
     { type: TokenTypes.Paren, value: ')' },
     { type: TokenTypes.Paren, value: ')' },
   ]
-
   首先执行rootNode.body.push(walk())，我们把这个walk叫做walk1
-
   执行walk1，里面创建一个createCallExpressionNode('add')，我们叫他AddNode
   AddNode的params会push一个NumberNode('2')，此时AddNode.params长度为1；
   然后继续while，继续while的话，因为紧接着就是左括号（token[3]），所以又会创建一个walk叫做walk2
@@ -113,11 +84,8 @@ export function parser(tokens: Token[]) {
     walk2中，会创建一个新的createCallExpressionNode('subtract')，我们叫他SubtractNode
     SubtractNode的params会push一个NumberNode('4')和一个NumberNode('2')
     所以walk2就返回SubtractNode(NumberNode(4),NumberNode(2))，把结果push到AddNode.params里面
-
 因此walk1就返回AddNode(NumberNode(2),SubtractNode(NumberNode(4),NumberNode(2)))，然后walk1就结束了
 用表达式就是：( 2 + ( 4 - 2 ) )
-
-
 然后解释一下最下面的while（可参考test中的'two callExpression'）:
   while (current < tokens.length) {
     const outWalkNode = walk()

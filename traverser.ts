@@ -45,5 +45,6 @@ export function traverser(rootNode: RootNode, visitor: Visitor) {
       methods.exit(node, parent)
     }
   }
+  
   traverNode(rootNode)
 }
