@@ -3,62 +3,61 @@ import {
   createStringLiteralNode,
   createNumberLiteralNode,
   createCallExpression,
-} from "./ast";
-import { Token, TokenTypes } from "./tokenizer";
+} from './ast'
+import { Token, TokenTypes } from './tokenizer'
 
 export function parser(tokens: Token[]) {
-  const root = createRootNode();
+  const root = createRootNode()
 
-  let current = 0;
+  let current = 0
 
   function walk() {
-    let token = tokens[current];
+    let token = tokens[current]
 
     if (token.type === TokenTypes.Number) {
-      current++;
+      current++
 
-      return createNumberLiteralNode(token.value);
+      return createNumberLiteralNode(token.value)
     }
 
     if (token.type === TokenTypes.String) {
-      current++;
+      current++
 
-      return createStringLiteralNode(token.value);
+      return createStringLiteralNode(token.value)
     }
 
-    if (token.type === TokenTypes.Paren && token.value === "(") {
-      token = tokens[++current];
+    if (token.type === TokenTypes.Paren && token.value === '(') {
+      token = tokens[++current]
 
-      let node = createCallExpression(token.value);
+      let node = createCallExpression(token.value)
 
       // 上一个 token 已经使用完了  所以我们还需要在移动下位置
-      token = tokens[++current];
+      token = tokens[++current]
       // params
       while (
         // token.type !== TokenType.paren ||
         // (token.type === TokenType.paren && token.value !== ")")
-        !(token.type === TokenTypes.Paren && token.value === ")")
+        !(token.type === TokenTypes.Paren && token.value === ')')
       ) {
-        node.params.push(walk());
-        token = tokens[current];
+        node.params.push(walk())
+        token = tokens[current]
       }
 
       // 跳过 )
-      current++;
+      current++
 
-      return node;
+      return node
     }
 
-    throw new Error(`识别不了的 token: ${token}`);
+    throw new Error(`识别不了的 token: ${token}`)
   }
 
   while (current < tokens.length) {
-    root.body.push(walk());
+    root.body.push(walk())
   }
 
-  return root;
+  return root
 }
-
 
 /*
   其实如果你的递归水平不错， 就不需要看下面的分析了，直接看上面代码就行了，下面的内容就是讲述这个递归思路的。
@@ -95,3 +94,4 @@ export function parser(tokens: Token[]) {
 ( ( 2 + 4 ) (3 + 5 ) )
 如果遇到了，就重复上面的过程，把结果push到rootNode.body里面，最后返回rootNode
 */
+
