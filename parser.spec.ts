@@ -3,7 +3,6 @@ import { NodeTypes } from './ast'
 import { parser } from './parser'
 import { TokenTypes } from './tokenizer'
 
-
 describe('parser', () => {
   it('parser tokens to ast', () => {
     const tokens = [
