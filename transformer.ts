@@ -1,47 +1,53 @@
-import { RootNode } from './ast'
-
-export function transformer(node: RootNode) {
-  const visitor = {
-    NumberLiteral: {
-      enter(node: any) {
-        return {
-          type: 'NumberLiteral',
-          value: node.value,
-        }
-      },
-    },
-    StringLiteral: {
-      enter(node: any) {
-        return {
-          type: 'StringLiteral',
-          value: node.value,
-        }
-      },
-    },
-    CallExpression: {
-      enter(node: any) {
-        return {
-          type: 'CallExpression',
-          callee: {
-            type: 'Identifier',
-            name: node.name,
-          },
-          arguments: node.params.map((param: any) => {
-            return visitor[param.type].enter(param)
-          }),
-        }
-      },
-    },
-    Program: {
-      enter(node: any) {
-        return {
-          type: 'Program',
-          body: node.body.map((bodyNode: any) => {
-            return visitor[bodyNode.type].enter(bodyNode)
-          }),
-        }
-      },
-    },
+import { NodeTypes, RootNode } from './ast'
+import { traverser } from './traverser'
+export function transformer(ast: RootNode) {
+  const newAst = {
+    type: NodeTypes.Program,
+    body: [],
   }
-  return visitor[node.type].enter(node)
+
+  ast.context = newAst.body
+
+  traverser(ast, {
+    CallExpression: {
+      enter(node, parent) {
+        if (node.type === NodeTypes.CallExpression) {
+          let expression: any = {
+            type: 'CallExpression',
+            callee: {
+              type: 'Identifier',
+              name: node.name,
+            },
+            arguments: [],
+          }
+
+          node.context = expression.arguments
+
+          if (parent?.type !== NodeTypes.CallExpression) {
+            expression = {
+              type: 'ExpressionStatement',
+              expression,
+            }
+          }
+
+          parent?.context?.push(expression)
+        }
+      },
+    },
+
+    NumberLiteral: {
+      enter(node, parent) {
+        if (node.type === NodeTypes.NumberLiteral) {
+          const numberNode: any = {
+            type: 'NumberLiteral',
+            value: node.value,
+          }
+
+          parent?.context?.push(numberNode)
+        }
+      },
+    },
+  })
+
+  return newAst
 }
